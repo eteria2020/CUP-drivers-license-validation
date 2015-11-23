@@ -1,6 +1,6 @@
 <?php
 
-namespace DriversLicenseValidation;
+namespace MvLabs\DriversLicenseValidation;
 
 class Module
 {
