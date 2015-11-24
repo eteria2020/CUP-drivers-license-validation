@@ -44,8 +44,14 @@ class PortaleAutomobilistaValidationService implements ValidationServiceInterfac
 
         try {
             $wsdl = $this->createSoapClient();
+
+            $result = $wsdl->verificaValiditaPatente($inputData);
+
+            return $this->parseResult($result);
         } catch (WsdlDownloadUnavailableException $e) {
             throw new ValidationErrorException($e->getMessage());
+        } catch (\Exception $e) {
+            throw new WsdlCallErrorException($e->getMessage());
         }
     }
 
@@ -117,5 +123,19 @@ class PortaleAutomobilistaValidationService implements ValidationServiceInterfac
         $wsdl->__setSoapHeaders([$soapWsseHeader]);
 
         return $wsdl;
+    }
+
+    /**
+     * @param \StdClass $result
+     * @return string
+     */
+    private function parseResult(\StdClass $result)
+    {
+        return [
+            'messageCode' => isset($result->messaggio->codiceMessaggio) ? $result->messaggio->codiceMessaggio : null,
+            'messageDescription' => isset($result->messaggio->descrizioneMessaggio) ? $result->messaggio->descrizioneMessaggio : null,
+            'errorCode' => isset($result->errore->codiceErrore) ? $result->errore->codiceErrore : null,
+            'errorMessage' => isset($result->errore->descrizioneErrore) ? $result->errore->descrizioneErrore : null
+        ];
     }
 }
