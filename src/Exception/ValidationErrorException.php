@@ -1,6 +1,6 @@
 <?php
 
-namespace MvLabs\DriversLicensevalidation\Exception;
+namespace MvLabsDriversLicensevalidation\Exception;
 
 class ValidationErrorException extends \ErrorException
 {

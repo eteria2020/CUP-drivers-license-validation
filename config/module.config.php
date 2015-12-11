@@ -1,14 +1,16 @@
 <?php
 
-namespace MvLabs\DriversLicenseValidation;
+namespace MvLabsDriversLicenseValidation;
 
 return [
     'service_manager' => [
         'factories' => [
-            'MvLabs\DriversLicenseValidation\PortaleAutomobilista' => 'MvLabs\DriversLicenseValidation\PortaleAutomobilistaServiceFactory'
+            'MvLabsDriversLicenseValidation\PortaleAutomobilista' => 'MvLabsDriversLicenseValidation\Service\PortaleAutomobilistaValidationServiceFactory',
+            'MvLabsDriversLicenseValidation\EnqueueValidation' => 'MvLabsDriversLicenseValidation\Service\EnqueueValidationServiceFactory',
+            'MvLabsDriversLicenseValidation\Job\ValidationJob' => 'MvLabsDriversLicenseValidation\Job\ValidationJobFactory'
         ],
-        'alias' => [
-            'MvLabs\DriversLicenseValidation\Validation' => 'MvLabs\DriversLicenseValidation\PortaleAutomobilista'
+        'aliases' => [
+            'MvLabsDriversLicenseValidation\Validation' => 'MvLabsDriversLicenseValidation\PortaleAutomobilista'
         ]
     ]
 ];

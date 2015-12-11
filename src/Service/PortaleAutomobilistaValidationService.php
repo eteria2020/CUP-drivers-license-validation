@@ -1,29 +1,33 @@
 <?php
 
-namespace MvLabs\DriversLicenseValidation\Service;
+namespace MvLabsDriversLicenseValidation\Service;
 
-use Mvlabs\DriversLicenseValidation\WsseAuthentication\Authentication;
-use Mvlabs\DriversLicenseValidation\Exception\WsdlDownloadUnavailableException;
-use Mvlabs\DriversLicenseValidation\Exception\ValidationErrorException;
+use MvLabsDriversLicenseValidation\Response\Response;
 
-use SoapVar;
-use SoapHeader;
-use SoapClient;
+use Zend\Http\Client;
+use Zend\Http\Request;
+use Zend\Stdlib\Parameters;
 
 class PortaleAutomobilistaValidationService implements ValidationServiceInterface
 {
     /**
-     * @var array $config
+     * @var array $config Portale dell'automobilista configuration parameters
      */
     private $config;
 
-    public function __construct($config)
+    /**
+     * @var Client $client Zend client used to make http requests
+     */
+    private $client;
+
+    public function __construct(array $config, Client $client)
     {
         $this->config = $config;
+        $this->client = $client;
     }
 
     /**
-     * validate the user driver's license using the public API from
+     * validate the user driver's license using the API from
      * www.ilportaledellautomobilista.it
      *
      * The parameter $data needs to contain the following keys
@@ -40,102 +44,64 @@ class PortaleAutomobilistaValidationService implements ValidationServiceInterfac
      */
     public function validateDriversLicense(array $data)
     {
-        $inputData = $this->createInputData($data);
+        $request = $this->createRequest($data);
 
-        try {
-            $wsdl = $this->createSoapClient();
+        $response = $this->client->send($request);
 
-            $result = $wsdl->verificaValiditaPatente($inputData);
-
-            return $this->parseResult($result);
-        } catch (WsdlDownloadUnavailableException $e) {
-            throw new ValidationErrorException($e->getMessage());
-        } catch (\Exception $e) {
-            throw new WsdlCallErrorException($e->getMessage());
-        }
+        return $this->parseResponse($response);
     }
 
     /**
      * @param array $data
-     * @return array
+     * @return Request
      */
-    private function createInputData(array $data)
+    private function createRequest(array $data)
     {
-        $inputData = [
-            'login' => [],
-            'patente' => [
-                'numeroPatente' => strtoupper($data['license'])
-            ],
-            'titolare' => [
-                'codiceFiscale' => strtoupper($data['taxCode']),
-                'nome' => strtoupper($data['name']),
-                'cognome' => strtoupper($data['surname']),
-                'dataNascita' => $data['birthDate'],
-                'origineNascita' => strtoupper($data['birthCountry'])
-            ],
-            'pdf' => false
-        ];
+        $request = new Request();
+        $request->setUri($this->config['url']);
+        $request->setMethod('POST');
 
-        // check if born in Italy or abroad
-        if (strtoupper($data['birthCountry'] === 'it')) {
-            $inputData['titolare']['luogoNascitaItaliano'] = [
-                'siglaProvincia' => strtoupper($data['birthProvince']),
-                'descrizioneComune' => strtoupper($data['birthTown'])
-            ];
+        $postParameters = new Parameters([
+            'patente' => $data['driverLicense'],
+            'cf' => $data['taxCode'],
+            'nome' => $data['name'],
+            'cognome' => $data['surname'],
+            'data_di_nascita' => date_create($data['birthDate']['date'])->format('Y-m-d'),
+            'origine_nascita' => $data['birthCountry'] === 'it' ? 'I' : 'E',
+            'provincia_nascita' => $data['birthProvince'],
+            'comune_nascita' => $data['birthTown']
+        ]);
+        $request->setPost($postParameters);
+
+        return $request;
+    }
+
+    /**
+     * @param Response $response
+     * @return Response
+     */
+    private function parseResponse($response)
+    {
+        $body = $response->getBody();
+
+        // small hack to avoid strange characters at the beginning of the string
+        $cleanedBody = substr($body, strpos($body, "{"));
+
+        $parsedResponse = json_decode($cleanedBody);
+
+        if ($this->isLicenseValid($parsedResponse)) {
+            return new Response(true, $parsedResponse->codiceMessaggio, $parsedResponse->descrizioneMessaggio);
         } else {
-            $inputData['titolare']['siglaStatoEsteroNascita'] = strtoupper($data['birthCountry']);
+            return new Response(false, $parsedResponse->codiceErrore, $parsedResponse->descrizioneErrore);
         }
-
-        return $inputData;
     }
 
     /**
-     * @return SoapClient
-     * @throws WsdlDownloadUnavailableException
+     * @param \StdClass $responseMessage
+     * @return bool
      */
-    private function createSoapClient()
+    private function isLicenseValid(\StdClass $responseMessage)
     {
-        $wsseNamespace = $this->config['wsse-namespace'];
-
-        $soapUser = new SoapVar($this->config['username'], XSD_STRING, null, $wsseNamespace, null, $wsseNamespace);
-        $soapPassword = new SoapVar($this->config['password'], XSD_STRING, null, $wsseNamespace, null, $wsseNamespace);
-
-        $wsseAuthentication = new Authentication($soapUser, $soapPassword);
-
-        $soapWsseAuthentication = new SoapVar($wsseAuthentication, SOAP_ENC_OBJECT, null, $wsseNamespace, 'UsernameToken', $wsseNamespace);
-
-        $wsseToken = new Token($soapWsseAuthentication);
-
-        $soapWsseToken = new SoapVar($wsseToken, SOAP_ENC_OBJECT, null, $wsseNamespace, 'UsernameToken', $wsseNamespace);
-
-        $soapHeader = new SoapVar($soapWsseToken, SOAP_ENC_OBJECT, null, $wsseNamespace, 'Security', $wsseNamespace);
-
-        $soapWsseHeader = new SoapHeader($wsseNamespace, 'Security', $soapHeader, true);
-
-        try {
-            $wsdl = new SoapClient($this->config['url'], [
-                'connection_timeout' => $this->config['connection_timeout']
-            ]);
-        } catch (\Exception $e) {
-            throw new WsdlDownloadUnavailableException($e->getMessage());
-        }
-
-        $wsdl->__setSoapHeaders([$soapWsseHeader]);
-
-        return $wsdl;
-    }
-
-    /**
-     * @param \StdClass $result
-     * @return string
-     */
-    private function parseResult(\StdClass $result)
-    {
-        return [
-            'messageCode' => isset($result->messaggio->codiceMessaggio) ? $result->messaggio->codiceMessaggio : null,
-            'messageDescription' => isset($result->messaggio->descrizioneMessaggio) ? $result->messaggio->descrizioneMessaggio : null,
-            'errorCode' => isset($result->errore->codiceErrore) ? $result->errore->codiceErrore : null,
-            'errorMessage' => isset($result->errore->descrizioneErrore) ? $result->errore->descrizioneErrore : null
-        ];
+        return $responseMessage->codiceErrore === "None";
     }
 }
