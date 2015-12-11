@@ -4,6 +4,7 @@ namespace MvLabsDriversLicenseValidation;
 
 use Resque_Event;
 use Resque\Plugins\Retry;
+use Zend\Mvc\MvcEvent;
 
 class Module
 {
