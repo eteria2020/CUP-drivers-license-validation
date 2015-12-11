@@ -109,6 +109,16 @@ class PortaleAutomobilistaValidationService implements ValidationServiceInterfac
 
     private function splitDriverLicenseName($driverLicenseName)
     {
-        return explode(" ", $driverLicenseName);
+        $spacePosition = strpos($driverLicenseName, " ");
+
+        if ($spacePosition !== false) {
+            $name = substr($driverLicenseName, 0, $spacePosition);
+            $surname = substr($driverLicenseName, $spacePosition + 1);
+        } else {
+            $name = $driverLicenseName;
+            $surname = "";
+        }
+
+        return [$name, $surname];
     }
 }
