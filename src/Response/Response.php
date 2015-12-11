@@ -10,13 +10,13 @@ class Response
     private $valid;
 
     /**
-     * @var string $code code of the outcome
+     * @var string|string[] $code code of the outcome, array if more than one code is present
      * @see documentation of Motorizzazione Civile
      */
     private $code;
 
     /**
-     * @var string $message description of the outcome
+     * @var string|string[] $message description of the outcome, array if more than one is present
      */
     private $message;
 
@@ -36,10 +36,14 @@ class Response
     }
 
     /**
-     * @return string cod of the outcome
+     * @return string code of the outcome
      */
     public function code()
     {
+        if (is_array($this->code)) {
+            return implode('|', $this->code);
+        }
+
         return $this->code;
     }
 
@@ -48,6 +52,10 @@ class Response
      */
     public function message()
     {
+        if (is_array($this->message)) {
+            return implode('|', $this->message);
+        }
+
         return $this->message;
     }
 }
