@@ -61,6 +61,12 @@ class PortaleAutomobilistaValidationService implements ValidationServiceInterfac
         $request->setUri($this->config['url']);
         $request->setMethod('POST');
 
+        // temporary measure for the passage from one license name filed to two
+        if (!isset($data['driverLicenseSurname'])) {
+            list($data['driverLicenseName'], $data['driverLicenseSurname']) =
+                $this->splitDriverLicenseName($data['driverLicenseName']);
+        }
+
         $postParameters = new Parameters([
             'patente' => $data['driverLicense'],
             'cf' => $data['taxCode'],
@@ -103,5 +109,20 @@ class PortaleAutomobilistaValidationService implements ValidationServiceInterfac
     private function isLicenseValid(\StdClass $responseMessage)
     {
         return $responseMessage->codiceErrore === "None";
+    }
+
+    private function splitDriverLicenseName($driverLicenseName)
+    {
+        $spacePosition = strpos($driverLicenseName, " ");
+
+        if ($spacePosition !== false) {
+            $name = substr($driverLicenseName, 0, $spacePosition);
+            $surname = substr($driverLicenseName, $spacePosition + 1);
+        } else {
+            $name = $driverLicenseName;
+            $surname = "";
+        }
+
+        return [$name, $surname];
     }
 }
