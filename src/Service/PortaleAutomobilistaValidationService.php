@@ -95,6 +95,12 @@ class PortaleAutomobilistaValidationService implements ValidationServiceInterfac
 
         $parsedResponse = json_decode($cleanedBody);
 
+        if ($parsedResponse->err) {
+            // the gateway is not responding correctly to us
+            // so we respond with the appropriate message
+            return new Response(false, -1, "Gateway not reachable");
+        }
+
         if ($this->isLicenseValid($parsedResponse)) {
             return new Response(true, $parsedResponse->codiceMessaggio, $parsedResponse->descrizioneMessaggio);
         } else {

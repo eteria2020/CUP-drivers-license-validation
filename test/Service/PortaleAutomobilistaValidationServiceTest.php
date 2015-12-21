@@ -23,8 +23,8 @@ class PortaleAutomobilistaValidationServiceTest extends \PHPUnit_Framework_TestC
         $data = [
             'driverLicense' => 'TV5162660G',
             'taxCode' => 'PRNMRC83S14C957V',
-            'name' => 'Marco',
-            'surname' => 'Perone',
+            'driverLicenseName' => 'Marco',
+            'driverLicenseSurname' => 'Perone',
             'birthDate' => ['date' => '1983-11-14'],
             'birthCountry' => 'it',
             'birthProvince' => 'TV',
@@ -44,8 +44,8 @@ class PortaleAutomobilistaValidationServiceTest extends \PHPUnit_Framework_TestC
         $data = [
             'driverLicense' => '',
             'taxCode' => 'PRNMRC83S14C957V',
-            'name' => 'Marco',
-            'surname' => 'Perone',
+            'driverLicenseName' => 'Marco',
+            'driverLicenseSurname' => 'Perone',
             'birthDate' => ['date' => '1983-11-14'],
             'birthCountry' => 'it',
             'birthProvince' => 'TV',

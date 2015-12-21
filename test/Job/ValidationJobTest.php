@@ -38,4 +38,17 @@ class ValidationJobTest extends \PHPUnit_Framework_TestCase
 
         $this->validationJob->perform();
     }
+
+    /**
+     * @expectedException \MvLabsDriversLicenseValidation\Exception\ValidationErrorException
+     */
+    public function testGatewayDown()
+    {
+        $response = new Response(false, -1, "Gateway down");
+
+        $this->validationService->shouldReceive('validateDriversLicense')->andReturn($response);
+        $this->events->shouldReceive('trigger')->with('unableToValidateDriversLicense', \Mockery::any(), \Mockery::any());
+
+        $this->validationJob->perform();
+    }
 }

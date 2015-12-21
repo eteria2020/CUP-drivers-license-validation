@@ -3,6 +3,7 @@
 namespace MvLabsDriversLicenseValidation\Job;
 
 use MvLabsDriversLicenseValidation\Service\ValidationServiceInterface;
+use MvLabsDriversLicenseValidation\Exception\ValidationErrorException;
 
 use Zend\EventManager\EventManagerInterface;
 use Zf2Resque\Service\ResqueJob;
@@ -37,7 +38,17 @@ class ValidationJob
     /**
      * @var int number of times the job should be retried
      */
-    public $retryLimit = 3;
+    public $retryLimit = 36;
+
+    /**
+     * @var int delay between retries in seconds
+     */
+    public $retryDelay = 7200;
+
+    /**
+     * @var $retryExceptions list of exceptions that will cause a retry
+     */
+    public $retryExceptions = ['\MvLabsDriversLicenseValidation\Exception\ValidationErrorException'];
 
     public function __construct(
         ValidationServiceInterface $validationService,
@@ -60,6 +71,10 @@ class ValidationJob
 
         if ($response->valid()) {
             $this->events->trigger('validDriversLicense', $this, $data);
+        } else if ($response->code() === -1) {
+            $this->events->trigger('unableToValidateDriversLicense', $this, $data);
+
+            throw new ValidationErrorException('Gateway not reachable');
         } else {
             $this->events->trigger('unvalidDriversLicense', $this, $data);
         }

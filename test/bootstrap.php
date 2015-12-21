@@ -24,7 +24,7 @@ class Bootstrap
 
         $config = [
             'modules' => [
-                'DriversLicenseValidation'
+                'MvLabsDriversLicenseValidation'
             ],
             'module_listener_options' => [
                 'module_paths' => [
