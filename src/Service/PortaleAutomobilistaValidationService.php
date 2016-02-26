@@ -74,8 +74,9 @@ class PortaleAutomobilistaValidationService implements ValidationServiceInterfac
             'cognome' => $data['driverLicenseSurname'],
             'data_di_nascita' => date_create($data['birthDate']['date'])->format('Y-m-d'),
             'origine_nascita' => $data['birthCountry'] === 'it' ? 'I' : 'E',
-            'provincia_nascita' => $data['birthProvince'],
-            'comune_nascita' => $data['birthTown']
+            'provincia_nascita' => $data['birthCountry'] === 'it' ? $data['birthProvince'] : '',
+            'comune_nascita' => $data['birthCountry'] === 'it' ? $data['birthTown'] : '',
+            'stato_nascita' => $data['birthCountryMCTC'],
         ]);
         $request->setPost($postParameters);
 
