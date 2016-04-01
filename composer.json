@@ -1,6 +1,6 @@
 {
     "name": "mvlabs/drivers-license-validation",
-    "description": "MVLabs diriver's license validation module for ZF2",
+    "description": "MVLabs driver's license validation module for ZF2",
     "license": "MIT",
     "keywords": [
         "zf2",
