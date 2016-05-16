@@ -32,7 +32,7 @@ class Response
      */
     public function valid()
     {
-        return $this->valid;
+        return $this->valid && $this->message == 'PATENTE VALIDA';
     }
 
     /**
